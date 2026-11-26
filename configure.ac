@@ -23,7 +23,7 @@
 # Initialize Autoconf
 AC_PREREQ([2.60])
 AC_INIT([xlibre-xf86-input-libinput],
-        [25.0.1],
+        [25.0.2-rc2],
         [https://github.com/X11Libre/xf86-input-libinput/issues],
         [xlibre-xf86-input-libinput])
 AC_CONFIG_SRCDIR([Makefile.am])
@@ -42,6 +42,11 @@ m4_ifndef([XORG_MACROS_VERSION],
           [m4_fatal([must install xorg-macros 1.8 or later before running autoconf/autogen])])
 XORG_MACROS_VERSION(1.8)
 XORG_DEFAULT_OPTIONS
+
+# XORG_RELEASE_VERSION drops a pre-release suffix such as "-rc1"; keep it.
+version_suffix=`echo "$PACKAGE_VERSION" | sed 's/^[[^-]]*//'`
+AC_DEFINE_UNQUOTED([PACKAGE_VERSION_SUFFIX], ["$version_suffix"],
+                   [Pre-release suffix of the version])
 
 CFLAGS="$CFLAGS -Wno-declaration-after-statement"
 
@@ -90,9 +95,9 @@ AC_LINK_IFELSE(
 AC_MSG_CHECKING([if libinput_tablet_tool_config_pressure_range_set is available])
 AC_LINK_IFELSE(
                [AC_LANG_PROGRAM([[#include <libinput.h>]],
-                                [[libinput_tablet_tool_config_pressure_range_set(0)]])],
+                                [[libinput_tablet_tool_config_pressure_range_set(NULL, 0.0, 1.0)]])],
                [AC_MSG_RESULT([yes])
-                AC_DEFINE(HAVE_LIBINPUT_PRESURE_RANGE, [1],
+                AC_DEFINE(HAVE_LIBINPUT_PRESSURE_RANGE, [1],
                           [libinput_tablet_tool_config_pressure_range_set() is available])
                 [libinput_have_pressure_range=yes]],
                [AC_MSG_RESULT([no])
@@ -120,6 +125,17 @@ AC_LINK_IFELSE(
                [AC_MSG_RESULT([no])
                 [libinput_have_plugin_system=no]])
 
+AC_MSG_CHECKING([if LIBINPUT_LED_COMPOSE and LIBINPUT_LED_KANA are available])
+AC_COMPILE_IFELSE(
+               [AC_LANG_PROGRAM([[#include <libinput.h>]],
+                                [[enum libinput_led l = LIBINPUT_LED_COMPOSE | LIBINPUT_LED_KANA; (void)l;]])],
+               [AC_MSG_RESULT([yes])
+                AC_DEFINE(HAVE_LIBINPUT_COMPOSE_AND_KANA, [1],
+                          [LIBINPUT_LED_COMPOSE and LIBINPUT_LED_KANA are available])
+                [libinput_have_compose_and_kana=yes]],
+               [AC_MSG_RESULT([no])
+                [libinput_have_compose_and_kana=no]])
+
 LIBS=$OLD_LIBS
 CFLAGS=$OLD_CFLAGS
 
@@ -134,8 +150,8 @@ inputdir=${moduledir}/input
 AC_SUBST(inputdir)
 
 AC_ARG_WITH(xorg-conf-dir,
-            AC_HELP_STRING([--with-xorg-conf-dir=DIR],
-                           [Default xorg.conf.d directory [[default=${prefix}/share/X11/xorg.conf.d]]]),
+            AS_HELP_STRING([--with-xorg-conf-dir=DIR],
+                           [Default xorg.conf.d directory @<:@default=${prefix}/share/X11/xorg.conf.d@:>@]),
             [xorgconfdir="$withval"],
             [xorgconfdir='${prefix}/share/X11/xorg.conf.d'])
 AC_SUBST(xorgconfdir)

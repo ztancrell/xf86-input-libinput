@@ -3985,8 +3985,10 @@ xf86libinput_create_subdevice(InputInfoPtr pInfo,
 	xf86OptionListFree(options);
 
 	hotplug = calloc(1, sizeof(*hotplug));
-	if (!hotplug)
+	if (!hotplug) {
+		input_option_free_list(&iopts);
 		return;
+	}
 
 	hotplug->input_options = iopts;
 	hotplug->attrs = DuplicateInputAttributes(pInfo->attrs);
@@ -4231,13 +4233,18 @@ InputDriverRec xf86libinput_driver = {
 	.capabilities	= XI86_DRV_CAP_SERVER_FD
 };
 
+#define LIBINPUT_VERSION_MAJOR	PACKAGE_VERSION_MAJOR
+#define LIBINPUT_VERSION_MINOR	PACKAGE_VERSION_MINOR
+#define LIBINPUT_VERSION_PATCH	PACKAGE_VERSION_PATCHLEVEL
+#define LIBINPUT_VERSION_SUFFIX	PACKAGE_VERSION_SUFFIX
+
 static XF86ModuleVersionInfo xf86libinput_version_info = {
 	"libinput",
 	MODULEVENDORSTRING,
 	MODINFOSTRING1,
 	MODINFOSTRING2,
 	XORG_VERSION_CURRENT,
-	PACKAGE_VERSION_MAJOR, PACKAGE_VERSION_MINOR, PACKAGE_VERSION_PATCHLEVEL,
+	LIBINPUT_VERSION_MAJOR, LIBINPUT_VERSION_MINOR, LIBINPUT_VERSION_PATCH,
 	ABI_CLASS_XINPUT,
 	ABI_XINPUT_VERSION,
 	MOD_CLASS_XINPUT,
@@ -4256,6 +4263,10 @@ _X_EXPORT XF86ModuleData libinputModuleData = {
 	.setup		= &xf86libinput_setup_proc,
 	.teardown	= NULL
 };
+
+#ifdef XF86_MODULE_VERSION_SUFFIX
+XF86_MODULE_VERSION_SUFFIX(libinput, LIBINPUT_VERSION_SUFFIX);
+#endif
 
 /* Property support */
 
