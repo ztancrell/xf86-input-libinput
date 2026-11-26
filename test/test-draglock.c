@@ -194,6 +194,7 @@ test_set_pairs(void)
 	int rc;
 	const int sz = 32;
 	int map[sz];
+	int oversized[DRAGLOCK_MAX_BUTTONS + 2] = {0};
 
 	draglock_init_from_string(&dl, "");
 	memset(map, 0, sizeof(map));
@@ -209,6 +210,11 @@ test_set_pairs(void)
 	map[0] = 1;
 	rc = draglock_set_pairs(&dl, map, 1);
 	assert(rc == 1);
+
+	/* more elements than lock_pair holds */
+	rc = draglock_set_pairs(&dl, oversized, DRAGLOCK_MAX_BUTTONS + 2);
+	assert(rc == 1);
+	assert(dl.mode == DRAGLOCK_DISABLED);
 
 	map[0] = 0;
 	map[1] = 2;

@@ -156,7 +156,7 @@ draglock_set_pairs(struct draglock *dl, const int *array, size_t nelem)
 {
 	unsigned int i;
 
-	if (nelem == 0 || array[0] != 0)
+	if (nelem == 0 || nelem > ARRAY_SIZE(dl->lock_pair) || array[0] != 0)
 		return 1;
 
 	for (i = 0; i < nelem; i++) {
