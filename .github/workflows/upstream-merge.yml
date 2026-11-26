@@ -25,10 +25,12 @@ env:
   REPO: ${{ github.repository }}
 jobs:
   merge:
-    if: github.ref == 'refs/heads/master'
+    # Only in a ztancrell fork, on its master: never runs in X11Libre or any other copy of this file.
+    if: github.repository_owner == 'ztancrell' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    container: archlinux:base-devel
+    # Artix, like zpt-artix's own CI: the [zpt-artix] packages are built for it (libudev, elogind).
+    container: docker.io/artixlinux/artixlinux:base-devel
     steps:
       - name: Install git and gh
         run: pacman -Syu --noconfirm --needed git github-cli
@@ -82,15 +84,16 @@ jobs:
             git restore --source=master --staged --worktree .github/workflows
             git commit --amend --no-edit
           fi
-      - name: Install build dependencies (PKGBUILD makedepends; X server from [zpt-cachy])
+      - name: Install build dependencies (PKGBUILD makedepends; X server from [zpt-artix])
         if: steps.new.outputs.go
         run: |
-          # The driver builds against the homestead X server SDK: install it from the signed [zpt-cachy] repo.
-          curl -fsSL -o zpt-cachy.asc https://raw.githubusercontent.com/ztancrell/zpt-cachy/main/zpt-cachy.asc
+          # The driver builds against the homestead X server SDK: install it from the signed [zpt-artix]
+          # repo, trusting only its key, as zpt-artix's README says.
+          curl -fsSL -o zpt-artix.asc https://raw.githubusercontent.com/ztancrell/zpt-artix/master/zpt-artix.asc
           pacman-key --init
-          pacman-key --add zpt-cachy.asc
-          pacman-key --lsign-key 3A6F07D9D227FB888250B4A3AB192A45ADE20A55
-          printf '\n[zpt-cachy]\nServer = https://github.com/ztancrell/zpt-cachy/releases/download/repo\n' >> /etc/pacman.conf
+          pacman-key --add zpt-artix.asc
+          pacman-key --lsign-key 473D2CE689E0FE660D43FD715566DC3F8C6B2B75
+          printf '\n[zpt-artix]\nServer = https://github.com/ztancrell/zpt-artix/releases/download/repo\n' >> /etc/pacman.conf
           pacman -Sy --noconfirm --needed meson libinput libx11 libxi xlibre-xserver-homestead
       - name: Build
         id: build
